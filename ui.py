@@ -1,11 +1,10 @@
-# ui.py
-
 import sys
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox
 from audio_processing import AudioInput, ProcessingEngine
-from visualization import Waveform, Spectrum
+from visualization import Waveform3D, Spectrum3D
 from PyQt5.QtCore import QTimer
 import threading
+import numpy as np
 
 class MainWindow(QMainWindow):
     def __init__(self, app):
@@ -16,8 +15,8 @@ class MainWindow(QMainWindow):
         self.file_data = None
         self.file_path = None
         self.processing_engine = ProcessingEngine()
-        self.waveform_view = Waveform(self)
-        self.spectrum_view = Spectrum(self)
+        self.waveform_view = Waveform3D(self)
+        self.spectrum_view = Spectrum3D(self)
         self.initUI()
 
     def initUI(self):
@@ -85,6 +84,7 @@ class MainWindow(QMainWindow):
             chunk = self.audio_input.read_file_chunk()
             if chunk is not None:
                 waveform = self.processing_engine.get_waveform(source='file', file_data=chunk)
+                print("File chunk loaded:", chunk)
                 print("File waveform:", waveform)
             else:
                 print("End of file reached")
@@ -93,14 +93,23 @@ class MainWindow(QMainWindow):
             # Apply threshold to the waveform to filter out noise
             threshold = 500
             waveform = self.processing_engine.apply_threshold(waveform, threshold)
+            print("Threshold applied waveform:", waveform)
 
             spectrum = self.processing_engine.get_spectrum(waveform)
             if spectrum is not None:
-                self.waveform_view.update(waveform)
-                self.spectrum_view.update(spectrum)
+                self.waveform_view.update_plot(waveform)
+                self.spectrum_view.update_plot(spectrum)
+                print("Graphs updated")
             else:
                 print("No valid spectrum data")
-                
+        else:
+            print("No waveform data to process")  # Additional debug statement
+
     def closeEvent(self, event):
-            self.audio_input.stop_audio_playback()  # Stop audio playback when closing the window
-            event.accept()
+        self.audio_input.stop_audio_playback()  # Stop audio playback when closing the window
+        event.accept()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    main_window = MainWindow(app)
+    main_window.run()
