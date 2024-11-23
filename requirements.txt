@@ -1,0 +1,9 @@
+pyaudio
+pyqtgraph
+PyQt5
+numpy
+scipy
+soundfile
+sounddevice
+PyOpenGL
+PyOpenGL_accelerate
