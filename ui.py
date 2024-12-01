@@ -31,7 +31,13 @@ class MainWindow(QMainWindow):
         self.input_source.setGeometry(10, 320, 150, 30)
         self.input_source.addItem("Microphone")
         self.input_source.addItem("Audio File")
+        self.input_source.setCurrentIndex(0)  # Set default to "Microphone"
         self.input_source.currentIndexChanged.connect(self.change_input_source)
+
+        # Initialize microphone stream
+        self.stream = self.audio_input.get_mic_stream()
+        self.processing_engine.stream = self.stream
+        print("Microphone stream initialized")
 
         # Adding a button to load audio files
         self.load_file_btn = QPushButton('Load Audio File', self)
@@ -48,8 +54,8 @@ class MainWindow(QMainWindow):
             self.processing_engine.stream = self.stream
             self.file_data = None
             self.file_path = None
-            print("Microphone stream initialized")
             self.audio_input.stop_audio_playback()
+            print("Microphone stream initialized")
         elif index == 1:
             self.load_file_btn.setEnabled(True)
             if self.stream is not None:
@@ -111,3 +117,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_window = MainWindow(app)
     main_window.run()
+    sys.exit(app.exec_())
