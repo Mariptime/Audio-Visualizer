@@ -49,6 +49,7 @@ class MainWindow(QMainWindow):
             self.file_data = None
             self.file_path = None
             print("Microphone stream initialized")
+            self.audio_input.stop_audio_playback()
         elif index == 1:
             self.load_file_btn.setEnabled(True)
             if self.stream is not None:
@@ -68,6 +69,7 @@ class MainWindow(QMainWindow):
             # Start playing audio in a separate thread
             playback_thread = threading.Thread(target=self.audio_input.play_audio_file, args=(file_name,))
             playback_thread.start()
+            
 
     def run(self):
         self.timer = QTimer()
@@ -104,3 +106,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
             self.audio_input.stop_audio_playback()  # Stop audio playback when closing the window
             event.accept()
+    
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    main_window = MainWindow(app)
+    main_window.run()

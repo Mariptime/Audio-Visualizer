@@ -11,26 +11,35 @@ This project is a Music Waveform Visualizer built using PyQt5 and pyqtgraph. It 
 ## Requirements
 
 - Python 3.10
-- PyQt5
+
+## Libraries
+- pyaudio
 - pyqtgraph
+- PyQt5
+- numpy
+- scipy
+- soundfile
+- sounddevice
+- PyOpenGL
+- PyOpenGL_accelerate
 
 ## Installation
 
 1. Clone the repository:
-    ```sh
+    ```
     git clone https://github.com/Mariptime/Audio-Visualizer.git
     cd music-waveform-visualizer
     ```
 
 2. Install the required packages:
-    ```sh
+    ```
     pip install -r requirements.txt
     ```
 
 ## Usage
 
 1. Run the application:
-    ```sh
+    ```
     python ui.py
     ```
 
@@ -40,9 +49,9 @@ This project is a Music Waveform Visualizer built using PyQt5 and pyqtgraph. It 
 
 ## Project Structure
 
-- [ui.py](http://_vscodecontentref_/0): Contains the main application code and UI setup.
-- [audio_processing.py](http://_vscodecontentref_/1): Contains the audio processing logic.
-- [visualization.py](http://_vscodecontentref_/2): Contains the waveform and spectrum visualization classes.
+- `ui.py`: Contains the main application code and UI setup.
+- `audio_processing.py`: Contains the audio processing logic.
+- `visualization.py`: Contains the waveform and spectrum visualization classes.
 
 ## Contributing
 
