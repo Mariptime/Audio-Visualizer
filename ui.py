@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox, QVBoxLayout, QWidget, QHBoxLayout
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QIcon
+import json
 import threading
 from audio_processing import AudioInput, ProcessingEngine
 from visualization import Waveform, Spectrum
@@ -30,12 +31,10 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout()
 
         # Create a horizontal layout for the plot views (waveform and spectrum)
-        plot_layout = QVBoxLayout()
-        plot_layout.addWidget(self.waveform_view)
-        plot_layout.addWidget(self.spectrum_view)
-
-        # Add plot layout to main layout
-        main_layout.addLayout(plot_layout)
+        self.plot_layout = QVBoxLayout()  # Default layout is vertical
+        self.plot_layout.addWidget(self.waveform_view)
+        self.plot_layout.addWidget(self.spectrum_view)
+        main_layout.addLayout(self.plot_layout)
 
         # Create a horizontal layout for control buttons (input source, load file, and reset)
         control_layout = QHBoxLayout()
@@ -64,6 +63,31 @@ class MainWindow(QMainWindow):
         self.reset_button.clicked.connect(self.Reset)
         control_layout.addWidget(self.reset_button, alignment=Qt.AlignRight)
 
+        # Color Scheme Selector (ComboBox)
+        self.color_scheme = QComboBox(self)
+        self.color_scheme.addItem("Default")
+        self.color_scheme.addItem("Dark Mode")
+        self.color_scheme.addItem("Light Mode")
+        self.color_scheme.addItem("Red Mode")
+        self.color_scheme.currentIndexChanged.connect(self.change_color_scheme)
+        control_layout.addWidget(self.color_scheme)
+        
+        # Layout Selector (Vertical or Horizontal)
+        self.layout_selector = QComboBox(self)
+        self.layout_selector.addItem("Vertical")
+        self.layout_selector.addItem("Horizontal")
+        self.layout_selector.currentIndexChanged.connect(self.change_layout)
+        control_layout.addWidget(self.layout_selector)
+
+        # Save and Load Settings Buttons
+        self.save_button = QPushButton('Save Settings', self)
+        self.save_button.clicked.connect(self.save_settings)
+        control_layout.addWidget(self.save_button)
+
+        self.load_button = QPushButton('Load Settings', self)
+        self.load_button.clicked.connect(self.load_settings)
+        control_layout.addWidget(self.load_button)
+        
         # Add control layout to main layout
         main_layout.addLayout(control_layout)
 
@@ -72,7 +96,95 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
 
+        self.load_settings()
         self.show()
+        
+    def change_layout(self):
+        selected_layout = self.layout_selector.currentText()
+
+        # Remove previous layout
+        for i in reversed(range(self.plot_layout.count())):
+            widget = self.plot_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.setParent(None)
+
+        if selected_layout == "Vertical":
+            # Use QVBoxLayout (vertical stacking)
+            self.plot_layout = QVBoxLayout()
+            self.plot_layout.addWidget(self.waveform_view)
+            self.plot_layout.addWidget(self.spectrum_view)
+        elif selected_layout == "Horizontal":
+            # Use QHBoxLayout (horizontal stacking)
+            self.plot_layout = QHBoxLayout()
+            self.plot_layout.addWidget(self.waveform_view)
+            self.plot_layout.addWidget(self.spectrum_view)
+
+        # Apply the new layout
+        central_widget = self.centralWidget()
+        central_widget.layout().insertLayout(0, self.plot_layout)
+
+    def change_color_scheme(self):
+        selected_scheme = self.color_scheme.currentText()
+        if selected_scheme == "Dark Mode":
+            # Apply dark mode to the entire window and plot views
+            self.setStyleSheet("background-color: #2E2E2E; color: white;")
+            self.waveform_view.setStyleSheet("background-color: #2E2E2E;")
+            self.spectrum_view.setStyleSheet("background-color: #2E2E2E;")
+        elif selected_scheme == "Light Mode":
+            # Apply light mode to the entire window and plot views
+            self.setStyleSheet("background-color: white; color: black;")
+            self.waveform_view.setStyleSheet("background-color: white;")
+            self.spectrum_view.setStyleSheet("background-color: white;")
+        elif selected_scheme == "Red Mode":
+            # Apply light mode to the entire window and plot views
+            self.setStyleSheet("background-color: maroon; color: white;")
+            self.waveform_view.setStyleSheet("background-color: white;")
+            self.spectrum_view.setStyleSheet("background-color: white;")
+        else:
+            # Default Mode (if any)
+            self.setStyleSheet("")
+            self.waveform_view.setStyleSheet("")
+            self.spectrum_view.setStyleSheet("")
+
+    def save_settings(self):
+        settings = {
+            'color_scheme': self.color_scheme.currentText(),
+            'layout': self.layout_selector.currentText()
+        }
+        with open('settings.json', 'w') as f:
+            json.dump(settings, f)
+        print("Settings saved.")
+
+    def load_settings(self):
+        try:
+            with open('settings.json', 'r') as f:
+                settings = json.load(f)
+            color_scheme = settings.get('color_scheme', 'Default')
+            layout = settings.get('layout', 'Vertical')
+
+            if color_scheme == "Dark Mode":
+                self.color_scheme.setCurrentIndex(1)
+                self.change_color_scheme()
+            elif color_scheme == "Light Mode":
+                self.color_scheme.setCurrentIndex(2)
+                self.change_color_scheme()
+            elif color_scheme == "Red Mode":
+                self.color_scheme.setCurrentIndex(3)
+                self.change_color_scheme()
+            else:
+                self.color_scheme.setCurrentIndex(0)
+                self.change_color_scheme()
+
+            if layout == "Horizontal":
+                self.layout_selector.setCurrentIndex(1)
+                self.change_layout()
+            else:
+                self.layout_selector.setCurrentIndex(0)
+                self.change_layout()
+
+            print("Settings loaded.")
+        except FileNotFoundError:
+            print("No settings file found.")
 
     def Reset(self):
         # Reset any ongoing audio playback or graph updates
@@ -86,7 +198,12 @@ class MainWindow(QMainWindow):
         self.waveform_view.reset()
         self.spectrum_view.reset()
         print("Graphs Cleared.")
-
+        
+        self.color_scheme.setCurrentIndex(0)
+        self.change_color_scheme()
+        self.layout_selector.setCurrentIndex(0)
+        self.change_layout()
+        
     def change_input_source(self, index):
         if self.timer.isActive():
             self.timer.stop()
@@ -163,6 +280,7 @@ class MainWindow(QMainWindow):
                 print("No valid spectrum data")
                 
     def closeEvent(self, event):
+        self.save_settings()
         self.audio_input.stop_audio_playback()  # Reset audio playback when closing the window
         event.accept()
 
