@@ -12,6 +12,7 @@ class Waveform(QWidget):
         self.layout.addWidget(self.plot_widget)
         self.plot_data = self.plot_widget.plot(pen='r')  # Set the plot line color to red
         self.plot_widget.setYRange(-3000, 3000)
+        self.plot_widget.setXRange(0, 2000)
         self.plot_widget.setLabel('left', 'Amplitude')
         self.plot_widget.setLabel('bottom', 'Time')
         self.plot_widget.showGrid(x=True, y=True)
@@ -22,6 +23,8 @@ class Waveform(QWidget):
     def reset(self):
         self.plot_data.setData([], [])
         self.plot_data.clear()
+        self.plot_widget.setYRange(-3000, 3000)
+        self.plot_widget.setXRange(0, 2000)
 
 class Spectrum(QWidget):
     def __init__(self, parent=None):
@@ -39,22 +42,11 @@ class Spectrum(QWidget):
     
     def update(self, freqs, spectrum):
         freqs = np.array(freqs).flatten()  # Ensure 1D
-        # spectrum = np.array(spectrum).flatten()  # Ensure 1D
-
-        # Validate lengths
-        if len(freqs) != len(spectrum):
-            print(f"Cannot update spectrum plot: freqs={len(freqs)}, spectrum={len(spectrum)}")
-            return
-
-        print(f"Updating spectrum: freqs={len(freqs)}, spectrum={len(spectrum)}")
-
-        if len(freqs) != len(spectrum):
-            print(f"Cannot update spectrum plot: freqs={len(freqs)}, spectrum={len(spectrum)}")
-            return
-
         self.plot_data.setData(freqs, spectrum)
 
 
     def reset(self):
         self.plot_data.setData([], [])
         self.plot_data.clear()  # Clear the plot data
+        self.plot_widget.setXRange(0, 22000)  # Set x-axis range to 0 to 22,000 Hz
+        self.plot_widget.setYRange(0, 6)  # Set x-axis range to 0 to 22,000 Hz

@@ -24,13 +24,13 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle("Music Waveform Visualizer")
         self.setWindowIcon(QIcon('icon.jpg'))
-        self.setGeometry(100, 100, 840, 400)
+        self.setGeometry(100, 100, 1280, 720)
 
         # Main layout
         main_layout = QVBoxLayout()
 
         # Create a horizontal layout for the plot views (waveform and spectrum)
-        plot_layout = QHBoxLayout()
+        plot_layout = QVBoxLayout()
         plot_layout.addWidget(self.waveform_view)
         plot_layout.addWidget(self.spectrum_view)
 
@@ -60,9 +60,9 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(self.load_file_btn)
 
         # Create reset button and place it to the right
-        self.stop_button = QPushButton('Stop', self)
-        self.stop_button.clicked.connect(self.Stop)
-        control_layout.addWidget(self.stop_button, alignment=Qt.AlignRight)
+        self.reset_button = QPushButton('Reset', self)
+        self.reset_button.clicked.connect(self.Reset)
+        control_layout.addWidget(self.reset_button, alignment=Qt.AlignRight)
 
         # Add control layout to main layout
         main_layout.addLayout(control_layout)
@@ -74,12 +74,12 @@ class MainWindow(QMainWindow):
 
         self.show()
 
-    def Stop(self):
-        # Stop any ongoing audio playback or graph updates
+    def Reset(self):
+        # Reset any ongoing audio playback or graph updates
         if self.timer.isActive():
             self.timer.stop()
         if self.stream:
-            self.audio_input.stop_audio_playback()  # Stop playback from microphone
+            self.audio_input.stop_audio_playback()  # Reset playback from microphone
 
         # Reset the visuals
         self.file_data = None
@@ -139,9 +139,9 @@ class MainWindow(QMainWindow):
                 waveform = self.processing_engine.get_waveform(source='file', file_data=chunk)
                 print(f"File waveform: length={len(waveform) if waveform is not None else 'None'}")
             else:
-                self.file_data = None  # Stop further updates
+                self.file_data = None  # Reset further updates
                 print("End of audio file reached.")
-                self.timer.stop()  # Stop the QTimer
+                self.Reset()
                 return
         
         if waveform is not None:
@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
                 print("No valid spectrum data")
                 
     def closeEvent(self, event):
-        self.audio_input.stop_audio_playback()  # Stop audio playback when closing the window
+        self.audio_input.stop_audio_playback()  # Reset audio playback when closing the window
         event.accept()
 
 if __name__ == "__main__":
