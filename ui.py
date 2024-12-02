@@ -1,11 +1,12 @@
 # ui.py
 
 import sys
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox, QVBoxLayout, QWidget, QHBoxLayout
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QIcon
+import threading
 from audio_processing import AudioInput, ProcessingEngine
 from visualization import Waveform, Spectrum
-from PyQt5.QtCore import QTimer
-import threading
 
 class MainWindow(QMainWindow):
     def __init__(self, app):
@@ -22,18 +23,31 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Music Waveform Visualizer")
-        self.waveform_view.setGeometry(10, 10, 400, 300)
-        self.spectrum_view.setGeometry(420, 10, 400, 300)
+        self.setWindowIcon(QIcon('icon.jpg'))
         self.setGeometry(100, 100, 840, 400)
+
+        # Main layout
+        main_layout = QVBoxLayout()
+
+        # Create a horizontal layout for the plot views (waveform and spectrum)
+        plot_layout = QHBoxLayout()
+        plot_layout.addWidget(self.waveform_view)
+        plot_layout.addWidget(self.spectrum_view)
+
+        # Add plot layout to main layout
+        main_layout.addLayout(plot_layout)
+
+        # Create a horizontal layout for control buttons (input source, load file, and reset)
+        control_layout = QHBoxLayout()
 
         # Adding input source selection
         self.input_source = QComboBox(self)
-        self.input_source.setGeometry(10, 320, 150, 30)
         self.input_source.addItem("Microphone")
         self.input_source.addItem("Audio File")
         self.input_source.setCurrentIndex(0)  # Set default to "Microphone"
         self.input_source.currentIndexChanged.connect(self.change_input_source)
-
+        control_layout.addWidget(self.input_source)
+        
         # Initialize microphone stream
         self.stream = self.audio_input.get_mic_stream()
         self.processing_engine.stream = self.stream
@@ -41,19 +55,27 @@ class MainWindow(QMainWindow):
 
         # Adding a button to load audio files
         self.load_file_btn = QPushButton('Load Audio File', self)
-        self.load_file_btn.setGeometry(170, 320, 150, 30)
         self.load_file_btn.clicked.connect(self.load_audio_file)
         self.load_file_btn.setEnabled(False)
-        
-        # Create reset button
+        control_layout.addWidget(self.load_file_btn)
+
+        # Create reset button and place it to the right
         self.stop_button = QPushButton('Stop', self)
-        self.stop_button.setGeometry(330, 320, 60, 30)
-        self.stop_button.clicked.connect(self.Stop) 
+        self.stop_button.clicked.connect(self.Stop)
+        control_layout.addWidget(self.stop_button, alignment=Qt.AlignRight)
+
+        # Add control layout to main layout
+        main_layout.addLayout(control_layout)
+
+        # Set the main layout to the window
+        central_widget = QWidget(self)
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
 
         self.show()
-        
+
     def Stop(self):
-    # Stop any ongoing audio playback or graph updates
+        # Stop any ongoing audio playback or graph updates
         if self.timer.isActive():
             self.timer.stop()
         if self.stream:
@@ -64,7 +86,6 @@ class MainWindow(QMainWindow):
         self.waveform_view.reset()
         self.spectrum_view.reset()
         print("Graphs Cleared.")
-
 
     def change_input_source(self, index):
         if self.timer.isActive():
@@ -98,7 +119,6 @@ class MainWindow(QMainWindow):
             # Start playing audio in a separate thread
             playback_thread = threading.Thread(target=self.audio_input.play_audio_file, args=(file_name,))
             playback_thread.start()
-            
 
     def run(self):
         self.timer = QTimer()
@@ -143,9 +163,9 @@ class MainWindow(QMainWindow):
                 print("No valid spectrum data")
                 
     def closeEvent(self, event):
-            self.audio_input.stop_audio_playback()  # Stop audio playback when closing the window
-            event.accept()
-    
+        self.audio_input.stop_audio_playback()  # Stop audio playback when closing the window
+        event.accept()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_window = MainWindow(app)
