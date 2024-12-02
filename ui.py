@@ -1,7 +1,7 @@
 # ui.py
 
 import sys
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox, QVBoxLayout, QWidget
 from audio_processing import AudioInput, ProcessingEngine
 from visualization import Waveform, Spectrum
 from PyQt5.QtCore import QTimer
@@ -44,8 +44,17 @@ class MainWindow(QMainWindow):
         self.load_file_btn.setGeometry(170, 320, 150, 30)
         self.load_file_btn.clicked.connect(self.load_audio_file)
         self.load_file_btn.setEnabled(False)
+        
+        # Create reset button
+        self.reset_button = QPushButton('Reset Graph View', self)
+        self.reset_button.setGeometry(330, 320, 150, 30)
+        self.reset_button.clicked.connect(self.reset_graph_view) 
 
         self.show()
+        
+    def reset_graph_view(self):
+        self.waveform_view.reset()
+        self.spectrum_view.reset()
 
     def change_input_source(self, index):
         if index == 0:
@@ -85,6 +94,7 @@ class MainWindow(QMainWindow):
 
     def update_visuals(self):
         waveform = None
+        samplerate = 44100  # Replace with the actual sample rate of your audio input
         if self.input_source.currentText() == "Microphone":
             if self.stream:
                 waveform = self.processing_engine.get_waveform(source='mic')
@@ -96,16 +106,16 @@ class MainWindow(QMainWindow):
                 print("File waveform:", waveform)
             else:
                 print("End of file reached")
-
+    
         if waveform is not None:
             # Apply threshold to the waveform to filter out noise
             threshold = 500
             waveform = self.processing_engine.apply_threshold(waveform, threshold)
-
-            spectrum = self.processing_engine.get_spectrum(waveform)
+    
+            freqs, spectrum = self.processing_engine.get_spectrum(waveform, samplerate)
             if spectrum is not None:
                 self.waveform_view.update(waveform)
-                self.spectrum_view.update(spectrum)
+                self.spectrum_view.update(freqs, spectrum)
             else:
                 print("No valid spectrum data")
                 

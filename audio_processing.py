@@ -1,5 +1,3 @@
-# audio_processing.py
-
 import pyaudio
 import numpy as np
 import soundfile as sf
@@ -60,11 +58,12 @@ class ProcessingEngine:
             waveform = file_data
         return waveform
 
-    def get_spectrum(self, waveform):
+    def get_spectrum(self, waveform, samplerate):
         if waveform is not None:
-            spectrum = np.fft.fft(waveform)
-            return np.abs(spectrum)
-        return None
+            spectrum = np.fft.rfft(waveform)
+            freqs = np.fft.rfftfreq(len(waveform), d=1/samplerate)
+            return freqs, np.abs(spectrum)
+        return None, None
 
     def apply_threshold(self, waveform, threshold=500):
         # Create a mutable copy of the waveform array
