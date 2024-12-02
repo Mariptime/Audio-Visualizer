@@ -30,6 +30,14 @@ class AudioInput:
         end = min(self.file_position + chunk_size, len(self.file_data))
         chunk = self.file_data[self.file_position:end]
         self.file_position = end
+
+        # If the audio file is stereo (2D array), convert to mono
+        if chunk.ndim == 2:
+            chunk = chunk.mean(axis=1).astype(self.file_data.dtype)
+
+        # Normalize to the range expected by the visualizer (-3000 to 3000)
+        chunk = chunk / np.max(np.abs(chunk)) * 3000
+
         return chunk
 
     def play_audio_file(self, file_path):
@@ -51,18 +59,36 @@ class ProcessingEngine:
             try:
                 data = self.stream.read(2048)
                 waveform = np.frombuffer(data, dtype=np.int16)
+                print(f"Microphone waveform length: {len(waveform)}")
             except Exception as e:
                 print(f"Error reading mic stream: {e}")
                 return None
         elif source == 'file' and file_data is not None:
             waveform = file_data
+        
+        if waveform.ndim > 1:
+            waveform = waveform.flatten()
+
         return waveform
 
     def get_spectrum(self, waveform, samplerate):
         if waveform is not None:
-            spectrum = np.fft.rfft(waveform)
-            freqs = np.fft.rfftfreq(len(waveform), d=1/samplerate)
-            return freqs, np.abs(spectrum)
+            # Perform FFT
+            spectrum = np.abs(np.fft.rfft(waveform))
+            print(spectrum)
+            freqs = np.fft.rfftfreq(len(waveform), d=1 / samplerate)
+            
+            # Enforce matching lengths
+            min_length = min(len(freqs), len(spectrum))
+            freqs = freqs[:min_length]
+            spectrum = spectrum[:min_length]
+            
+            freqs = np.array(freqs).flatten()
+            spectrum = np.array(spectrum).flatten()
+            
+            # Debugging information
+            print(f"Spectrum calculation: freqs={len(freqs)}, spectrum={len(spectrum)}")
+            return freqs, spectrum
         return None, None
 
     def apply_threshold(self, waveform, threshold=500):

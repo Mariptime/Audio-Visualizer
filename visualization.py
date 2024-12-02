@@ -1,5 +1,6 @@
 # visualization.py
 
+import numpy as np
 import pyqtgraph as pg
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
@@ -19,6 +20,7 @@ class Waveform(QWidget):
         self.plot_data.setData(waveform)
 
     def reset(self):
+        self.plot_data.setData([], [])
         self.plot_data.clear()
 
 class Spectrum(QWidget):
@@ -33,11 +35,26 @@ class Spectrum(QWidget):
         self.plot_widget.setLabel('bottom', 'Frequency (Hz)')
         self.plot_widget.showGrid(x=True, y=True)
         self.plot_widget.setXRange(0, 22000)  # Set x-axis range to 0 to 22,000 Hz
-        self.plot_widget.setYRange(6, 0)  # Set x-axis range to 0 to 22,000 Hz
-
-
+        self.plot_widget.setYRange(0, 6)  # Set x-axis range to 0 to 22,000 Hz
+    
     def update(self, freqs, spectrum):
+        freqs = np.array(freqs).flatten()  # Ensure 1D
+        # spectrum = np.array(spectrum).flatten()  # Ensure 1D
+
+        # Validate lengths
+        if len(freqs) != len(spectrum):
+            print(f"Cannot update spectrum plot: freqs={len(freqs)}, spectrum={len(spectrum)}")
+            return
+
+        print(f"Updating spectrum: freqs={len(freqs)}, spectrum={len(spectrum)}")
+
+        if len(freqs) != len(spectrum):
+            print(f"Cannot update spectrum plot: freqs={len(freqs)}, spectrum={len(spectrum)}")
+            return
+
         self.plot_data.setData(freqs, spectrum)
 
+
     def reset(self):
+        self.plot_data.setData([], [])
         self.plot_data.clear()  # Clear the plot data

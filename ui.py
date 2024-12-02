@@ -46,17 +46,30 @@ class MainWindow(QMainWindow):
         self.load_file_btn.setEnabled(False)
         
         # Create reset button
-        self.reset_button = QPushButton('Reset Graph View', self)
-        self.reset_button.setGeometry(330, 320, 150, 30)
-        self.reset_button.clicked.connect(self.reset_graph_view) 
+        self.stop_button = QPushButton('Stop', self)
+        self.stop_button.setGeometry(330, 320, 60, 30)
+        self.stop_button.clicked.connect(self.Stop) 
 
         self.show()
         
-    def reset_graph_view(self):
+    def Stop(self):
+    # Stop any ongoing audio playback or graph updates
+        if self.timer.isActive():
+            self.timer.stop()
+        if self.stream:
+            self.audio_input.stop_audio_playback()  # Stop playback from microphone
+
+        # Reset the visuals
+        self.file_data = None
         self.waveform_view.reset()
         self.spectrum_view.reset()
+        print("Graphs Cleared.")
+
 
     def change_input_source(self, index):
+        if self.timer.isActive():
+            self.timer.stop()
+        
         if index == 0:
             self.load_file_btn.setEnabled(False)
             self.stream = self.audio_input.get_mic_stream()
@@ -71,6 +84,7 @@ class MainWindow(QMainWindow):
                 self.stream.close()
                 self.processing_engine.stream = None
             print("File input enabled")
+        self.timer.start(50)
 
     def load_audio_file(self):
         options = QFileDialog.Options()
@@ -94,26 +108,35 @@ class MainWindow(QMainWindow):
 
     def update_visuals(self):
         waveform = None
-        samplerate = 44100  # Replace with the actual sample rate of your audio input
+        samplerate = 44100  # Replace with actual sample rate
         if self.input_source.currentText() == "Microphone":
             if self.stream:
                 waveform = self.processing_engine.get_waveform(source='mic')
-                print("Microphone waveform:", waveform)
+                print(f"Microphone waveform: length={len(waveform) if waveform is not None else 'None'}")
         elif self.file_data:
             chunk = self.audio_input.read_file_chunk()
             if chunk is not None:
                 waveform = self.processing_engine.get_waveform(source='file', file_data=chunk)
-                print("File waveform:", waveform)
+                print(f"File waveform: length={len(waveform) if waveform is not None else 'None'}")
             else:
-                print("End of file reached")
-    
+                self.file_data = None  # Stop further updates
+                print("End of audio file reached.")
+                self.timer.stop()  # Stop the QTimer
+                return
+        
         if waveform is not None:
-            # Apply threshold to the waveform to filter out noise
-            threshold = 500
+            # Apply threshold to remove noise
+            threshold = 50
             waveform = self.processing_engine.apply_threshold(waveform, threshold)
-    
+            print(f"Filtered waveform: length={len(waveform)}")
+
+            # Generate spectrum
             freqs, spectrum = self.processing_engine.get_spectrum(waveform, samplerate)
-            if spectrum is not None:
+            if freqs is not None and spectrum is not None:
+                if len(freqs) != len(spectrum):
+                    print(f"Skipping update: freqs={len(freqs)}, spectrum={len(spectrum)}")
+                    return
+                print(f"Spectrum data: freqs={len(freqs)}, spectrum={len(spectrum)}")
                 self.waveform_view.update(waveform)
                 self.spectrum_view.update(freqs, spectrum)
             else:
