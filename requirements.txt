@@ -1,9 +1,6 @@
-pyaudio
-pyqtgraph
-PyQt5
-numpy
-scipy
-soundfile
-sounddevice
-PyOpenGL
-PyOpenGL_accelerate
+pyaudio==0.2.14
+pyqtgraph==0.13.7
+PyQt5==5.15.11
+numpy==2.1.3
+soundfile==0.12.1
+sounddevice==0.5.1
