@@ -59,7 +59,6 @@ class ProcessingEngine:
             try:
                 data = self.stream.read(2048)
                 waveform = np.frombuffer(data, dtype=np.int16)
-                print(f"Microphone waveform length: {len(waveform)}")
             except Exception as e:
                 print(f"Error reading mic stream: {e}")
                 return None
@@ -75,25 +74,19 @@ class ProcessingEngine:
         if waveform is not None:
             # Perform FFT
             spectrum = np.abs(np.fft.rfft(waveform))
-            print(spectrum)
             freqs = np.fft.rfftfreq(len(waveform), d=1 / samplerate)
             
             # Enforce matching lengths
             min_length = min(len(freqs), len(spectrum))
             freqs = freqs[:min_length]
-            spectrum = spectrum[:min_length]
-            
+            spectrum = spectrum[:min_length]            
             freqs = np.array(freqs).flatten()
             spectrum = np.array(spectrum).flatten()
             
-            # Debugging information
-            print(f"Spectrum calculation: freqs={len(freqs)}, spectrum={len(spectrum)}")
             return freqs, spectrum
         return None, None
 
     def apply_threshold(self, waveform, threshold=500):
-        # Create a mutable copy of the waveform array
         mutable_waveform = np.copy(waveform)
-        # Apply a simple threshold filter to remove low amplitude noise
         mutable_waveform[abs(mutable_waveform) < threshold] = 0
         return mutable_waveform

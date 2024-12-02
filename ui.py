@@ -1,5 +1,3 @@
-# ui.py
-
 import sys
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QPushButton, QComboBox, QVBoxLayout, QWidget, QHBoxLayout
 from PyQt5.QtCore import QTimer, Qt
@@ -191,9 +189,8 @@ class MainWindow(QMainWindow):
         if self.timer.isActive():
             self.timer.stop()
         if self.stream:
-            self.audio_input.stop_audio_playback()  # Reset playback from microphone
-
-        # Reset the visuals
+            self.audio_input.stop_audio_playback()
+            
         self.file_data = None
         self.waveform_view.reset()
         self.spectrum_view.reset()
@@ -231,8 +228,9 @@ class MainWindow(QMainWindow):
             samplerate = self.audio_input.get_file_stream(file_name)
             self.file_data = True
             self.file_path = file_name
-            self.processing_engine.stream = None  # Clear the mic stream
+            self.processing_engine.stream = None
             print(f"Loaded file: {file_name}")
+            
             # Start playing audio in a separate thread
             playback_thread = threading.Thread(target=self.audio_input.play_audio_file, args=(file_name,))
             playback_thread.start()
@@ -240,23 +238,20 @@ class MainWindow(QMainWindow):
     def run(self):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_visuals)
-        self.timer.start(50)  # Adjusted interval to 50ms
+        self.timer.start(50)
         sys.exit(self.app.exec_())
 
     def update_visuals(self):
         waveform = None
-        samplerate = 44100  # Replace with actual sample rate
+        samplerate = 44100
         if self.input_source.currentText() == "Microphone":
             if self.stream:
                 waveform = self.processing_engine.get_waveform(source='mic')
-                print(f"Microphone waveform: length={len(waveform) if waveform is not None else 'None'}")
         elif self.file_data:
             chunk = self.audio_input.read_file_chunk()
             if chunk is not None:
                 waveform = self.processing_engine.get_waveform(source='file', file_data=chunk)
-                print(f"File waveform: length={len(waveform) if waveform is not None else 'None'}")
             else:
-                self.file_data = None  # Reset further updates
                 print("End of audio file reached.")
                 self.Reset()
                 return
@@ -265,15 +260,11 @@ class MainWindow(QMainWindow):
             # Apply threshold to remove noise
             threshold = 50
             waveform = self.processing_engine.apply_threshold(waveform, threshold)
-            print(f"Filtered waveform: length={len(waveform)}")
 
-            # Generate spectrum
             freqs, spectrum = self.processing_engine.get_spectrum(waveform, samplerate)
             if freqs is not None and spectrum is not None:
                 if len(freqs) != len(spectrum):
-                    print(f"Skipping update: freqs={len(freqs)}, spectrum={len(spectrum)}")
                     return
-                print(f"Spectrum data: freqs={len(freqs)}, spectrum={len(spectrum)}")
                 self.waveform_view.update(waveform)
                 self.spectrum_view.update(freqs, spectrum)
             else:
@@ -281,7 +272,7 @@ class MainWindow(QMainWindow):
                 
     def closeEvent(self, event):
         self.save_settings()
-        self.audio_input.stop_audio_playback()  # Reset audio playback when closing the window
+        self.audio_input.stop_audio_playback()
         event.accept()
 
 if __name__ == "__main__":
